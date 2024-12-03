@@ -105,10 +105,10 @@ def follow_user(followee_id: int, session: Session = Depends(get_session), curre
 
     return {'success': True}
 
-@app.get("/follows/")
-def get_followers(session: Session = Depends(get_session), current_user: str = Depends(get_current_user)):
+@app.get("/follows/{user_id}")
+def get_followers(user_id:int, session: Session = Depends(get_session), current_user: str = Depends(get_current_user)):
 
-    statement = select(Follower).where(Follower.followee_id == current_user['sub'])
+    statement = select(Follower).where(Follower.followee_id == user_id)
     results = session.exec(statement)
     response = []
     for result in results:
