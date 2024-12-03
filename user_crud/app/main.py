@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 from db.db_connection import get_session
 from db.models import User
 from datetime import datetime
+import jwt
 
 app = FastAPI()
 
@@ -58,11 +59,13 @@ def get_users(email_address: str, password:str, session: Session = Depends(get_s
     statement = select(User).where(User.email == email_address).where(User.password == password)
 
     try:
-        session.exec(statement).one()
+        user = session.exec(statement).one()
 
     except:
         raise HTTPException(status_code=403, detail="Invalid Credentials. Please try again")
 
     # Create JWT Token 
+    payload_data = {'sub': str(user.id), 'username': user.username}
+    token = jwt.encode(payload=payload_data, key='secret')
 
-    return {'jwt_token': '12345'}
+    return {'jwt_token': token}
