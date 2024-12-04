@@ -65,7 +65,7 @@ def get_users(user_id: int, session: Session = Depends(get_session), current_use
     return {'success': True}
 
 @app.post("/login/")
-def get_users(email_address: str, password:str, session: Session = Depends(get_session)):
+def login(email_address: str, password:str, session: Session = Depends(get_session)):
 
     statement = select(User).where(User.email == email_address).where(User.password == password)
 
@@ -105,7 +105,7 @@ def follow_user(followee_id: int, session: Session = Depends(get_session), curre
 
     return {'success': True}
 
-@app.get("/follows/{user_id}")
+@app.get("/followers/{user_id}")
 def get_followers(user_id:int, session: Session = Depends(get_session), current_user: str = Depends(get_current_user)):
 
     statement = select(Follower).where(Follower.followee_id == user_id)
