@@ -1,0 +1,6 @@
+sqlmodel
+fastapi
+uvicorn[standard]
+psycopg2-binary
+pyjwt[crypto]
+minio
