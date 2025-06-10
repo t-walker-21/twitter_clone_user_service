@@ -4,12 +4,13 @@ from fastapi import FastAPI, Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
-from db.db_connection import get_session
-from db.models import Users, Follower
+from src.db.db_connection import get_session
+from src.db.models import Users, Follower
 from datetime import datetime
 import jwt
 import os
-from utils.minio import MinioClient
+from src.utils.minio import MinioClient
+from src.utils.logging import logger
 import uuid
 
 app = FastAPI()
@@ -35,7 +36,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     
     try:
         user_info = jwt.decode(jwt=token, key=os.environ["JWT_SECRET"], algorithms=["HS256",])
-        return user_info  # In a real application, you would return a user object
+        return user_info 
     
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=403, detail="Token expired")
@@ -56,6 +57,8 @@ def create_user(user: Users, session: Session = Depends(get_session)):
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    logger.info(f"User created with ID: {user.id}")
 
     return {'success': True}
 
@@ -105,17 +108,13 @@ def delete_user(user_id: int, session: Session = Depends(get_session), current_u
     user = results.one()
     session.delete(user)
     session.commit()
+
+    logger.info(f"User with ID {user_id} deleted successfully")
         
     return {'success': True}
 
 @router.post("/login/")
 def login(email_address: str, password:str, session: Session = Depends(get_session)):
-
-    statement = select(Users)
-
-    results = session.exec(statement)
-
-    print (results.all())
 
     statement = select(Users).where(Users.email == email_address).where(Users.password == password)
 
@@ -127,6 +126,8 @@ def login(email_address: str, password:str, session: Session = Depends(get_sessi
     # Create JWT Token 
     payload_data = {'sub': str(user.id), 'username': user.username}
     token = jwt.encode(payload=payload_data, key=os.environ["JWT_SECRET"], algorithm="HS256")
+
+    logger.info(f"User {user.username} logged in successfully")
 
     return {'jwt_token': token}
 
@@ -208,7 +209,7 @@ def add_profile_picture(picture_url: str, session: Session = Depends(get_session
     user.profile_picture_url = picture_url
     session.commit()
 
-    print (f"Updated profile picture for user {user.id}: {picture_url}")
+    logger.info(f"Updated profile picture for user {user.id}: {picture_url}")
 
     return {'success': True, 'profile_picture_url': picture_url}
 
